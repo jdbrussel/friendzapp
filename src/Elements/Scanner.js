@@ -69,7 +69,7 @@ const Scanner = () => {
                             isPause={isPause}
                             license="DLS2eyJoYW5kc2hha2VDb2RlIjoiMTAxNzA3NDc5LVRYbFhaV0pRY205cVgyUmljZyIsIm1haW5TZXJ2ZXJVUkwiOiJodHRwczovL21sdHMuZHluYW1zb2Z0LmNvbSIsIm9yZ2FuaXphdGlvbklEIjoiMTAxNzA3NDc5IiwiY2hlY2tDb2RlIjotMTYwNjgxMjIwNX0="
                             drawOverlay={true}
-                            desiredCamera="environment"
+                            desiredCamera="back"
                             desiredResolution={{
                                 width: 1280,
                                 height: 720
