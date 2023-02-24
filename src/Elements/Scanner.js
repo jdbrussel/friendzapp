@@ -53,13 +53,13 @@ const Scanner = () => {
             <div className="flex flex-col h-full w-full items-start justify-between safe-bottom safe-left safe-right ">
                 <div className="flex w-full min-h-[50px] items-end justify-between p-[var(--app-body-padding)] gap-[var(--app-body-padding)]">
                     <div className="flex-grow-0 min-w-[22%] text-left">
-                        <Link className="text-blue-400 " onClick={() => setIsActive(!isActive)}>{!isActive ? 'Scanner aan' : 'Scanner Uit'}</Link>
+                        <Link className="text-blue-400 " onClick={() => { setIsActive(false); app.ModalClose(modalName) }}>Annuleren</Link>
                     </div>
                     <div className="flex-1 min-w-0 text-center">
                         <h2 className="truncate text-lg font-semibold">Scanner</h2>
                     </div>
                     <div className="flex-grow-0 min-w-[22%] text-right">
-                        <Link className="text-blue-400 " onClick={() => { setIsActive(false); app.ModalClose(modalName) }}>Opslaan</Link>
+                        <Link className="text-blue-400 " onClick={() => setIsActive(!isActive)}>{!isActive ? 'Scanner aan' : 'Scanner Uit'}</Link>
                     </div>
                 </div>
                 <div className="flex-1 w-full flex flex-col items-center justify-start gap-5">

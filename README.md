@@ -26,3 +26,9 @@ Axios is for handling API calls
 Barcode Scanner (https://www.npmjs.com/package/react-barcode-qrcode-scanner)
 
 ### `npm i react-barcode-qrcode-scanner`
+
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/jdbrussel/friendzapp.git
+git push -u origin main
