@@ -23,9 +23,15 @@ Axios is for handling API calls
 
 ### `npm i axios`
 
-Barcode Scanner (https://www.npmjs.com/package/react-barcode-qrcode-scanner)
+jsQR is a pure Javascript QR Code Decoder
 
-### `npm i react-barcode-qrcode-scanner`
+### `npm install jsqr --save` 
+
+### `npm i babel-runtime`
+
+### `npm i --save @bsonntag/react-user-media`
+
+### `npm install --save react-qr-reader-es6`
 
 <!-- git add README.md
 git commit -m "first commit"

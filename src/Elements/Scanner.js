@@ -1,14 +1,48 @@
-
-import { BarcodeScanner } from "react-barcode-qrcode-scanner";
-import { TextResult } from "dynamsoft-javascript-barcode";
-
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback, Measure } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { PopupModal } from "../Modals/Modals";
 import { IconOutline, IconSolid } from "./Icon";
 
+import jsQR from "jsqr";
 import useGlobals from "../Hooks/useGlobals";
 import useAuth from "../Hooks/useAuth";
+
+
+const getCamera = async () => {
+
+    if (!navigator.mediaDevices) {
+        throw new Error("mediaDevices API unavailable.");
+    }
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter(d => (d.kind === "videoinput"));
+    return cameras[0];
+
+};
+
+const constraints = {
+    audio: false,
+    video: {
+        facingMode: "environment"
+    }
+}
+
+const startSanner = async () => {
+
+    const video = document.getElementById("video");
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    video.srcObject = stream;
+    video.setAttribute("playsinline", true);
+    await video.play();
+}
+
+const stopScanner = async () => {
+    const video = await document.getElementById("video");
+    await video.srcObject?.getTracks().forEach(track => track.stop());
+}
+
 
 
 const Scanner = () => {
@@ -16,77 +50,101 @@ const Scanner = () => {
     const app = useGlobals();
     const auth = useAuth();
 
-    const [isActive, setIsActive] = useState(true); //whether the camera is active
-    const [initialized, setInitialized] = useState(true); //whether the camera is active
-    const [isPause, setIsPause] = useState(false); //whether the video is paused
-    const [runtimeSettings, setRuntimeSettings] = useState("{\"ImageParameter\":{\"BarcodeFormatIds\":[\"BF_QR_CODE\"],\"Description\":\"\",\"Name\":\"Settings\"},\"Version\":\"3.0\"}"); //use JSON template to decode QR codes only
-    const onOpened = (cam: HTMLVideoElement, camLabel: string) => { // You can access the video element in the onOpened event
-        console.log("opened");
-    }
+    const modalName = "scanner";
+    const modalType = "over";
 
-    const onClosed = () => {
-    }
+    const requestRef = useRef();
+    const statusRef = useRef();
 
-    const onDeviceListLoaded = (devices: MediaDeviceInfo[]) => {
-    }
+    const [status, setStatus] = useState('idle');
 
-    const onScanned = (results: TextResult[]) => { // barcode results
-        if (results[0]?.barcodeText) {
-            alert(results[0].barcodeText);
+    const [codeData, setCodeData] = useState(false);
+
+    const toggleScanner = async (action) => {
+
+        if (!statusRef.current || statusRef.current === 'idle') {
+            await startSanner();
+            statusRef.current = 'scanning';
+            setStatus(statusRef.current);
+            setCodeData(false);
+            requestRef.current = requestAnimationFrame(tick);
+            return () => cancelAnimationFrame(requestRef.current);
+
+
+        }
+        if (statusRef.current === 'scanning' || action === 'stop') {
+            cancelAnimationFrame(requestRef.current);
+            await stopScanner();
+            statusRef.current = 'idle';
+            setStatus(statusRef.current);
         }
     }
 
-    const onClicked = (result: TextResult) => { // when a barcode overlay is clicked
-        alert(result.barcodeText);
+    const tick = time => {
+
+        const video = document.getElementById("video");
+        const videoTracks = video.srcObject.getVideoTracks();
+        const videoTrackSettings = videoTracks[0].getSettings();
+
+        const canvas = document.createElement("canvas");
+        canvas.height = videoTrackSettings.height;
+        canvas.width = videoTrackSettings.width;
+        const canvasContext = canvas.getContext("2d", { willReadFrequently: true });
+        canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var imageData;
+        var fetchCode = false;
+        if (canvas.width && canvas.height) {
+            imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+            fetchCode = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+        }
+        if (!fetchCode?.data) {
+            console.log(time);
+            requestRef.current = requestAnimationFrame(tick);
+            return () => cancelAnimationFrame(requestRef.current);
+        }
+        else {
+            setCodeData(fetchCode.data);
+            toggleScanner('stop');
+        }
     }
 
-    const onInitialized = () => { // when the Barcode Reader is initialized
-        setInitialized(true);
-    }
+    //              drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+    //              drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+    //              drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+    //              drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
 
-
-    const modalName = "scanner";
-    const modalType = "over";
+    // const drawLine = (begin, end, color) => {
+    //     if (canvas) {
+    //         canvas.beginPath();
+    //         canvas.moveTo(begin.x, begin.y);
+    //         canvas.lineTo(end.x, end.y);
+    //         canvas.lineWidth = 4;
+    //         canvas.strokeStyle = color;
+    //         canvas.stroke();
+    //     }
+    // }
 
     return (
         <PopupModal modalName={modalName} modalType={modalType} app={app}>
             <div className="flex flex-col h-full w-full items-start justify-between safe-bottom safe-left safe-right ">
                 <div className="flex w-full min-h-[50px] items-end justify-between p-[var(--app-body-padding)] gap-[var(--app-body-padding)]">
                     <div className="flex-grow-0 min-w-[22%] text-left">
-                        <Link className="text-blue-400 " onClick={() => { setIsActive(false); app.ModalClose(modalName) }}>Annuleren</Link>
+                        <Link className="text-blue-400 " onClick={() => { toggleScanner('stop'); app.ModalClose(modalName) }}>Annuleren</Link>
                     </div>
                     <div className="flex-1 min-w-0 text-center">
                         <h2 className="truncate text-lg font-semibold">Scanner</h2>
                     </div>
                     <div className="flex-grow-0 min-w-[22%] text-right">
-                        <Link className="text-blue-400 " onClick={() => setIsActive(!isActive)}>{!isActive ? 'Scanner aan' : 'Scanner Uit'}</Link>
+                        <Link className="text-blue-400 " onClick={() => { toggleScanner(); }}>{status === 'scanning' ? 'Stoppen' : 'Scannen'}</Link>
                     </div>
                 </div>
-                <div className="flex-1 w-full flex flex-col items-center justify-start gap-5">
+                <div className="flex-1 w-full flex flex-col items-center justify-center gap-5">
                     <section className="w-full h-full">
-                        <BarcodeScanner
-                            isActive={isActive}
-                            isPause={isPause}
-                            license="DLS2eyJoYW5kc2hha2VDb2RlIjoiMTAxNzA3NDc5LVRYbFhaV0pRY205cVgyUmljZyIsIm1haW5TZXJ2ZXJVUkwiOiJodHRwczovL21sdHMuZHluYW1zb2Z0LmNvbSIsIm9yZ2FuaXphdGlvbklEIjoiMTAxNzA3NDc5IiwiY2hlY2tDb2RlIjotMTYwNjgxMjIwNX0="
-                            drawOverlay={true}
-                            desiredCamera="back"
-                            desiredResolution={{
-                                width: 1280,
-                                height: 720
-                            }}
-                            runtimeSettings={runtimeSettings}
-                            onScanned={onScanned}
-                            onClicked={onClicked}
-                            onOpened={onOpened}
-                            onClosed={onClosed}
-                            onInitialized={onInitialized}
-                            onDeviceListLoaded={onDeviceListLoaded}
-                        >
-                        </BarcodeScanner>
+                        <video autoPlay={true} id="video" muted={true} className="w-full" />
                     </section>
                 </div>
                 <div className="flex flex-row min-h-[30px] w-full px-[var(--app-body-padding)] items-center justify-center py-[var(--app-body-padding)]">
-                    <span>Footer</span>
+                    <p className="font-bold text-center px-5">{codeData}</p>
                 </div>
             </div>
         </PopupModal>
@@ -94,3 +152,4 @@ const Scanner = () => {
 }
 
 export default Scanner;
+
