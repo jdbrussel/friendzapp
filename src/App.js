@@ -4,7 +4,7 @@ import { motion, useMotionValue, useMotionValueEvent, AnimatePresence, useScroll
 import { IconOutline, IconSolid } from "./Elements/Icon";
 
 import useGlobals from "./Hooks/useGlobals";
-import useAuth from "./Hooks/useAuth";
+import RequireAuth from "./requireAuth";
 
 import HeaderUser from "./Elements/HeaderUser";
 import FooterNavLink from "./Elements/FooterNavLink";
@@ -16,13 +16,16 @@ import SlideMenu from "./Elements/SlideMenu";
 
 import Homepage from "./Components/Homepage";
 
-
+import Signin from "./Components/User/Signin";
+const ROLES = {
+    'User': 2001,
+    'Editor': 1984,
+    'Admin': 5150
+}
 
 function App() {
 
     const app = useGlobals();
-    const auth = useAuth();
-
     const location = useLocation();
 
     // console.log(app.pages);
@@ -45,6 +48,16 @@ function App() {
         return (<FooterNavLink item={item} app={app} key={index} />)
     });
 
+    useEffect(() => {
+        // var body = document.body,
+        //     html = document.documentElement;
+        // console.log(`Body scrollHeight: ${body.scrollHeight}`);
+        // console.log(`Body offsetHeight: ${body.offsetHeight}`);
+        // console.log(`html clientHeight: ${html.clientHeight}`);
+        // console.log(`html scrollHeight: ${html.scrollHeight}`);
+        // console.log(`html offsetHeight: ${html.offsetHeight}`);
+    });
+
     return (
         <>
             <div className="app-container w-screen h-full bg-white">
@@ -55,11 +68,13 @@ function App() {
                         <AnimatePresence initial={false}>
                             <Routes>
                                 <Route path="/" element={<Homepage />} />
-                                <Route path="/user" element={
-                                    <h1 className="text-lg font-bold flex-1 max-width text-center">My Account</h1>
-                                } />
+                                <Route element={<RequireAuth allowedRoles={[ROLES.User]} />}>
+                                    <Route path="/user" element={
+                                        <h1 className="text-lg font-bold flex-1 max-width text-center">My Account</h1>
+                                    } />
+                                </Route>
                                 <Route path="/user/signin" element={
-                                    <h1 className="text-lg font-bold flex-1 max-width text-center">Sign in</h1>
+                                    <Signin />
                                 } />
                                 <Route path="/cards" element={
                                     <h1 className="text-lg font-bold flex-1 max-width text-center">My Cards</h1>
