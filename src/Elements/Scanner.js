@@ -43,8 +43,6 @@ const stopScanner = async () => {
     await video.srcObject?.getTracks().forEach(track => track.stop());
 }
 
-
-
 const Scanner = () => {
 
     const app = useGlobals();
@@ -157,7 +155,7 @@ const Scanner = () => {
                         <Link className="text-blue-400 " onClick={() => { stopScanning(); app.ModalClose(modalName) }}>Annuleren</Link>
                     </div>
                     <div className="flex-1 min-w-0 text-center">
-                        <h2 className="truncate text-lg font-semibold">Scanner</h2>
+                        <h2 className="truncate text-lg font-semibold">Scanner ({status})</h2>
                     </div>
                     <div className="flex-grow-0 min-w-[22%] text-right">
                         <Link className="text-blue-400 " onClick={() => { toggleScanner(); }}>{status === 'scanning' ? 'Stoppen' : 'Scannen'}</Link>
@@ -165,7 +163,7 @@ const Scanner = () => {
                 </div>
                 <div className="flex-1 w-full flex flex-col items-center justify-center gap-5">
                     <section className="w-full h-full">
-                        <video autoPlay={true} id="video" muted={true} className="w-full" />
+                        <video autoPlay={true} id="video" muted={true} className="w-full h-full" />
                     </section>
                 </div>
                 <div className="flex flex-row min-h-[30px] w-full px-[var(--app-body-padding)] items-center justify-center py-[var(--app-body-padding)]">
