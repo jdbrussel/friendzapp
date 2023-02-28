@@ -29,10 +29,6 @@ jsQR is a pure Javascript QR Code Decoder
 
 ### `npm i babel-runtime`
 
-### `npm i --save @bsonntag/react-user-media`
-
-### `npm install --save react-qr-reader-es6`
-
 <!-- git add README.md
 git commit -m "first commit"
 git branch -M main

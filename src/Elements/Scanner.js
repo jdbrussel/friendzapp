@@ -27,7 +27,7 @@ const constraints = {
     }
 }
 
-const startSanner = async () => {
+const startScanner = async () => {
 
     const video = document.getElementById("video");
 
@@ -56,55 +56,80 @@ const Scanner = () => {
     const requestRef = useRef();
     const statusRef = useRef();
 
-    const [status, setStatus] = useState('idle');
+    const [status, setStatus] = useState(false);
 
     const [codeData, setCodeData] = useState(false);
 
     const toggleScanner = async (action) => {
 
-        if (!statusRef.current || statusRef.current === 'idle') {
-            await startSanner();
-            statusRef.current = 'scanning';
-            setStatus(statusRef.current);
-            setCodeData(false);
-            requestRef.current = requestAnimationFrame(tick);
-            return () => cancelAnimationFrame(requestRef.current);
-
+        if (statusRef.current === 'idle') {
+            return startScanning();
 
         }
         if (statusRef.current === 'scanning' || action === 'stop') {
-            cancelAnimationFrame(requestRef.current);
-            await stopScanner();
-            statusRef.current = 'idle';
-            setStatus(statusRef.current);
+            await stopScanning();
         }
     }
 
+    const startScanning = async () => {
+        await stopScanning();
+        setCodeData(false);
+        await startScanner();
+        statusRef.current = 'scanning';
+        setStatus(statusRef.current);
+        requestRef.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(requestRef.current);
+    }
+
+    const stopScanning = async () => {
+        await stopScanner();
+        cancelAnimationFrame(requestRef.current);
+        statusRef.current = 'idle';
+        setStatus(statusRef.current);
+    }
+
+    useEffect(() => {
+        if (!statusRef.current) {
+            statusRef.current = 'idle';
+            startScanning();
+        }
+    });
+
     const tick = time => {
 
-        const video = document.getElementById("video");
-        const videoTracks = video.srcObject.getVideoTracks();
-        const videoTrackSettings = videoTracks[0].getSettings();
+        console.log(statusRef.current);
 
-        const canvas = document.createElement("canvas");
-        canvas.height = videoTrackSettings.height;
-        canvas.width = videoTrackSettings.width;
-        const canvasContext = canvas.getContext("2d", { willReadFrequently: true });
-        canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
-        var imageData;
-        var fetchCode = false;
-        if (canvas.width && canvas.height) {
-            imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
-            fetchCode = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-        }
-        if (!fetchCode?.data) {
-            console.log(time);
-            requestRef.current = requestAnimationFrame(tick);
-            return () => cancelAnimationFrame(requestRef.current);
-        }
-        else {
-            setCodeData(fetchCode.data);
-            toggleScanner('stop');
+        if (statusRef.current !== 'idle') {
+
+            const video = document.getElementById("video");
+            if (video) {
+
+                const videoTracks = video.srcObject.getVideoTracks();
+                const videoTrackSettings = videoTracks[0].getSettings();
+
+                const canvas = document.createElement("canvas");
+                canvas.height = videoTrackSettings.height;
+                canvas.width = videoTrackSettings.width;
+
+
+                var imageData;
+                var fetchCode = false;
+                if (canvas.width && canvas.height) {
+                    const canvasContext = canvas.getContext("2d", { willReadFrequently: true });
+                    canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+                    fetchCode = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+                }
+                if (!fetchCode?.data) {
+                    // console.log(time);
+                    requestRef.current = requestAnimationFrame(tick);
+                    return () => cancelAnimationFrame(requestRef.current);
+                }
+                else {
+                    setCodeData(fetchCode.data);
+                    toggleScanner('stop');
+                }
+            }
         }
     }
 
@@ -129,7 +154,7 @@ const Scanner = () => {
             <div className="flex flex-col h-full w-full items-start justify-between safe-bottom safe-left safe-right ">
                 <div className="flex w-full min-h-[50px] items-end justify-between p-[var(--app-body-padding)] gap-[var(--app-body-padding)]">
                     <div className="flex-grow-0 min-w-[22%] text-left">
-                        <Link className="text-blue-400 " onClick={() => { toggleScanner('stop'); app.ModalClose(modalName) }}>Annuleren</Link>
+                        <Link className="text-blue-400 " onClick={() => { stopScanning(); app.ModalClose(modalName) }}>Annuleren</Link>
                     </div>
                     <div className="flex-1 min-w-0 text-center">
                         <h2 className="truncate text-lg font-semibold">Scanner</h2>
